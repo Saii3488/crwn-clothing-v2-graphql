@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect } from 'react';
 
 import { gql,useQuery } from '@apollo/client';
+import { collection } from 'firebase/firestore';
 const COLLECTIONS = gql`
   query GetCollections {
     collections {
@@ -22,9 +23,18 @@ export const CategoriesContext = createContext({
 export const CategoriesProvider = ({ children }) => {
   const{loading,error,data}=useQuery(COLLECTIONS)
   const [categoriesMap, setCategoriesMap] = useState({});
-  console.log("loading",loading);
-  console.log("data",data);
-  const value = { categoriesMap };
+  useEffect(()=>{
+    if(data){
+      const{collections}=data;
+      const collectionsMap=collections.reduce((acc,collection)=>{
+        const{title,items}=collection;
+        acc[title.toLowerCase()]=items;
+        return acc;
+      },{})
+      setCategoriesMap(collectionsMap)
+    }
+  },[data])
+  const value = { categoriesMap,loading };
   return (
     <CategoriesContext.Provider value={value}>
       {children}
